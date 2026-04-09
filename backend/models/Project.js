@@ -1,5 +1,4 @@
-import pool from '../config/db.js';
-
+const pool = require('../config/db');
 class Project {
   // Create a new project
   static async create({ user_id, title, description, stage, support_needed, github_repo, live_demo }) {
@@ -129,4 +128,4 @@ class Project {
   }
 }
 
-export default Project;
+module.exports = Project;

@@ -2,8 +2,9 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-// Import routes - NEW LINE
+// Import routes
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');  // ← THIS MUST BE HERE
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,8 +13,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes - NEW LINE
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);  // ← AND THIS MUST BE HERE
 
 // Test route
 app.get('/', (req, res) => {
@@ -36,7 +38,7 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📦 Environment: process.env.NODE_ENV || 'development'}`);
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🗄️  Database: ${process.env.DB_NAME}`);
   console.log(`👤 User: ${process.env.DB_USER}`);
 });
