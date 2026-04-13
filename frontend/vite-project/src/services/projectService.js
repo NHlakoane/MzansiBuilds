@@ -108,10 +108,18 @@ export const raiseHand = async (projectId) => {
 
 // Get completed projects for celebration wall
 export const getCelebrationWall = async () => {
-  return authFetch('/celebration');
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:5000/api/celebration', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  return response.json();
 };
 
 // Get count of completed projects
 export const getCompletedCount = async () => {
   return authFetch('/celebration/count');
 };
+

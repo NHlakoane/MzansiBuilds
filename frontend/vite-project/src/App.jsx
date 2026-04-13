@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Feed from './pages/Feed';
+import CelebrationWall from './pages/CelebrationWall';
 
 function Navbar() {
   const { user, logout } = useAuth();
