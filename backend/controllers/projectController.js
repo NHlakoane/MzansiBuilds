@@ -27,12 +27,12 @@ const createProject = async (req, res) => {
 
 // @desc    Get all projects (feed)
 const getAllProjects = async (req, res) => {
-  console.log("getAllProjects was called");  // ← ADD THIS LINE
+  console.log("getAllProjects was called");  
   try {
     const projects = await Project.getAll({});
     res.json(projects);
   } catch (error) {
-    console.log("ERROR in getAllProjects:", error);  // ← ADD THIS LINE
+    console.log("ERROR in getAllProjects:", error);  
     res.status(500).json({ message: 'Server error' });
   }
 };

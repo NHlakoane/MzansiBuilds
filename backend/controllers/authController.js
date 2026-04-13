@@ -7,6 +7,18 @@ const registerUser = async (req, res) => {
   try {
     const { username, email, password, full_name, bio } = req.body;
 
+    
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
+    }
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
+    }
+   
+
     // Check if email already exists
     const userExists = await User.findByEmail(email);
     if (userExists) {
@@ -49,6 +61,11 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // ✅ Add validation for login too
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     // Find user by email
     const user = await User.findByEmail(email);
     if (!user) {
@@ -84,4 +101,4 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getMe }; 
+module.exports = { registerUser, loginUser, getMe };
