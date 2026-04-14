@@ -22,5 +22,6 @@ router.get('/:id', protect, getProjectById);
 router.put('/:id', protect, updateProject);
 router.put('/:id/complete', protect, completeProject);
 router.delete('/:id', protect, deleteProject);
+router.get('/my-projects', protect, getMyProjects);
 
 module.exports = router;

@@ -1,119 +1,176 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-export default function Dashboard() {
-  const { user, logout } = useAuth();
+function Dashboard() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [newProject, setNewProject] = useState({ title: '', description: '', stage: 'planning' });
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchProjects();
-  }, [user]);
-
-  const fetchProjects = async () => {
-    const res = await api.get('/projects/my/projects');
-    setProjects(res.data);
-  };
-
-  const handleCreateProject = async (e) => {
-    e.preventDefault();
-    await api.post('/projects', newProject);
-    setNewProject({ title: '', description: '', stage: 'planning' });
-    setShowForm(false);
-    fetchProjects();
-  };
-
-  const handleComplete = async (id) => {
-    await api.put(`/projects/${id}/complete`);
-    fetchProjects();
-  };
-
-  const handleDelete = async (id) => {
-    if (confirm('Delete this project?')) {
-      await api.delete(`/projects/${id}`);
-      fetchProjects();
+  const fetchMyProjects = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch('http://localhost:5000/api/projects/my-projects', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setProjects(data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  useEffect(() => {
+    fetchMyProjects();
+  }, []);
+
+  const handleDelete = async (projectId) => {
+    if (!confirm('Are you sure you want to delete this project?')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchMyProjects(); // Refresh the list
+      } else {
+        alert('Failed to delete project');
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Error deleting project');
+    }
+  };
+
+  const handleEdit = (projectId) => {
+    navigate(`/edit-project/${projectId}`);
+  };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff', padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #00ff00', paddingBottom: '10px' }}>
-        <h1 style={{ color: '#00ff00' }}>MzansiBuilds</h1>
-        <div>
-          <span style={{ marginRight: '20px' }}>Hello, {user.username}</span>
-          <button onClick={logout} style={{ backgroundColor: '#333', color: '#fff', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
-        </div>
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #0a1a0a 0%, #000000 100%)',
+        border: '1px solid #00ff00',
+        borderRadius: '12px',
+        padding: '2rem',
+        marginBottom: '2rem',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ color: '#00ff00', marginBottom: '0.5rem' }}>
+          Welcome back, {user?.username || user?.email}!
+        </h1>
+        <p style={{ color: '#cccccc' }}>Track your projects, celebrate milestones, and build in public.</p>
       </div>
 
-      <div style={{ marginTop: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>My Projects</h2>
-          <button onClick={() => setShowForm(!showForm)} style={{ backgroundColor: '#00ff00', color: '#000', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-            + New Project
-          </button>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
+        <Link to="/new-project" style={{
+          backgroundColor: '#00ff00',
+          color: '#000000',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          textDecoration: 'none'
+        }}>
+          + New Project
+        </Link>
+        <Link to="/feed" style={{
+          backgroundColor: 'transparent',
+          color: '#00ff00',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          textDecoration: 'none',
+          border: '2px solid #00ff00'
+        }}>
+          View All Projects
+        </Link>
+      </div>
+
+      <h2 style={{ color: '#00ff00', marginBottom: '1rem', fontSize: '1.5rem' }}>📁 My Projects</h2>
+      
+      {loading ? (
+        <p style={{ color: '#ffffff', textAlign: 'center' }}>Loading your projects...</p>
+      ) : projects.length === 0 ? (
+        <div style={{
+          backgroundColor: '#0a0a0a',
+          border: '1px dashed #00ff00',
+          borderRadius: '12px',
+          padding: '3rem',
+          textAlign: 'center'
+        }}>
+          <p style={{ color: '#cccccc', marginBottom: '1rem' }}>No projects yet.</p>
+          <Link to="/new-project" style={{ color: '#00ff00', textDecoration: 'underline' }}>
+            Click "New Project" to start building in public!
+          </Link>
         </div>
-
-        {showForm && (
-          <form onSubmit={handleCreateProject} style={{ backgroundColor: '#111', padding: '20px', borderRadius: '8px', margin: '20px 0' }}>
-            <input
-              type="text"
-              placeholder="Project Title"
-              value={newProject.title}
-              onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-              required
-              style={{ width: '100%', padding: '10px', margin: '10px 0', backgroundColor: '#222', color: '#fff', border: '1px solid #00ff00', borderRadius: '4px' }}
-            />
-            <textarea
-              placeholder="Description"
-              value={newProject.description}
-              onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-              required
-              style={{ width: '100%', padding: '10px', margin: '10px 0', backgroundColor: '#222', color: '#fff', border: '1px solid #00ff00', borderRadius: '4px' }}
-            />
-            <select
-              value={newProject.stage}
-              onChange={(e) => setNewProject({ ...newProject, stage: e.target.value })}
-              style={{ width: '100%', padding: '10px', margin: '10px 0', backgroundColor: '#222', color: '#fff', border: '1px solid #00ff00', borderRadius: '4px' }}
-            >
-              <option value="planning">Planning</option>
-              <option value="in-progress">In Progress</option>
-              <option value="review">Review</option>
-            </select>
-            <button type="submit" style={{ backgroundColor: '#00ff00', color: '#000', padding: '10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>Create Project</button>
-          </form>
-        )}
-
-        {projects.length === 0 ? (
-          <p style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>No projects yet. Click "New Project" to start building in public!</p>
-        ) : (
-          projects.map(project => (
-            <div key={project.id} style={{ backgroundColor: '#111', padding: '15px', margin: '15px 0', borderRadius: '8px', border: '1px solid #00ff00' }}>
-              <h3 style={{ color: '#00ff00' }}>{project.title}</h3>
-              <p>{project.description}</p>
-              <p><strong>Stage:</strong> {project.stage}</p>
-              {!project.is_completed && (
-                <button onClick={() => handleComplete(project.id)} style={{ backgroundColor: '#00ff00', color: '#000', padding: '5px 10px', marginRight: '10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                  Mark Complete
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+          {projects.map(project => (
+            <div key={project.id} style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #00ff00',
+              borderRadius: '8px',
+              padding: '1.5rem'
+            }}>
+              <h3 style={{ color: '#00ff00', marginBottom: '0.5rem' }}>{project.title}</h3>
+              <p style={{ color: '#cccccc', marginBottom: '1rem' }}>
+                {project.description.length > 100 ? project.description.substring(0, 100) + '...' : project.description}
+              </p>
+              <div style={{ marginBottom: '1rem' }}>
+                <span style={{
+                  backgroundColor: project.stage === 'completed' ? '#00ff00' : '#333',
+                  color: project.stage === 'completed' ? '#000' : '#00ff00',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.85rem'
+                }}>
+                  {project.stage || 'planning'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <Link to={`/project/${project.id}`} style={{
+                  color: '#00ff00',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  padding: '0.25rem 0.5rem'
+                }}>
+                  View Details →
+                </Link>
+                <button onClick={() => handleEdit(project.id)} style={{
+                  backgroundColor: 'transparent',
+                  color: '#00ff00',
+                  border: '1px solid #00ff00',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}>
+                  Edit
                 </button>
-              )}
-              {project.is_completed && <span style={{ color: '#00ff00' }}>✅ Completed!</span>}
-              <button onClick={() => handleDelete(project.id)} style={{ backgroundColor: '#ff4444', color: '#fff', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                Delete
-              </button>
+                <button onClick={() => handleDelete(project.id)} style={{
+                  backgroundColor: 'transparent',
+                  color: '#ff4444',
+                  border: '1px solid #ff4444',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}>
+                  Delete
+                </button>
+              </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+export default Dashboard;

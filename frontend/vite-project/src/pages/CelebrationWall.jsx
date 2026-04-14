@@ -1,43 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import { getCelebrationWall } from '../services/projectService';
 
 function CelebrationWall() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProjects();
+    const fetchCompletedProjects = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        // Get all projects from feed
+        const response = await fetch('http://localhost:5000/api/projects/feed', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const allProjects = await response.json();
+          // Filter projects where stage is 'completed'
+          const completed = allProjects.filter(p => p.stage === 'completed');
+          setProjects(completed);
+          console.log('Completed projects found:', completed.length);
+        } else {
+          setProjects([]);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCompletedProjects();
   }, []);
 
-  const loadProjects = async () => {
-    try {
-      const data = await getCelebrationWall();
-      setProjects(data);
-    } catch (error) {
-      console.error('Error loading celebration wall:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="text-center py-10">Loading...</div>;
+  if (loading) {
+    return <div style={{ color: '#ffffff', textAlign: 'center', padding: '2rem' }}>Loading...</div>;
+  }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-center mb-8" style={{ color: '#00aa00' }}>
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ color: '#00ff00', textAlign: 'center', marginBottom: '0.5rem', fontSize: '2.5rem' }}>
         🎉 Celebration Wall 🎉
       </h1>
+      <p style={{ color: '#cccccc', textAlign: 'center', marginBottom: '2rem' }}>
+        Celebrating completed projects from the MzansiBuilds community
+      </p>
+      
       {projects.length === 0 ? (
-        <p className="text-center text-gray-500">No completed projects yet. Be the first!</p>
+        <div style={{
+          backgroundColor: '#0a0a0a',
+          border: '1px dashed #00ff00',
+          borderRadius: '12px',
+          padding: '3rem',
+          textAlign: 'center'
+        }}>
+          <p style={{ color: '#cccccc', marginBottom: '1rem' }}>No completed projects yet.</p>
+          <p style={{ color: '#666666', fontSize: '0.9rem' }}>
+            To add a project to the Celebration Wall:
+          </p>
+          <ol style={{ color: '#666666', textAlign: 'left', maxWidth: '400px', margin: '1rem auto' }}>
+            <li>1. Go to Dashboard</li>
+            <li>2. Click "Edit" on your project</li>
+            <li>3. Change Stage to "Completed"</li>
+            <li>4. Save the project</li>
+          </ol>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
           {projects.map(project => (
-            <div key={project.id} className="border rounded-lg p-4 shadow">
-              <h3 className="font-bold text-lg">{project.title}</h3>
-              <p className="text-gray-600 text-sm">{project.description}</p>
-              <p className="text-sm mt-2" style={{ color: '#00aa00' }}>
-                Built by: {project.username || project.email}
+            <div key={project.id} style={{
+              backgroundColor: '#0a0a0a',
+              border: '2px solid #00ff00',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              transition: 'transform 0.2s'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏆</div>
+              <h3 style={{ color: '#00ff00', marginBottom: '0.5rem' }}>{project.title}</h3>
+              <p style={{ color: '#cccccc', marginBottom: '1rem' }}>
+                {project.description && project.description.length > 150 
+                  ? project.description.substring(0, 150) + '...' 
+                  : project.description}
               </p>
+              <p style={{ color: '#ffffff', fontSize: '0.9rem' }}>
+                Built by: <span style={{ color: '#00ff00' }}>{project.username || project.email || 'Anonymous'}</span>
+              </p>
+              <div style={{ marginTop: '0.5rem' }}>
+                <span style={{
+                  backgroundColor: '#00ff00',
+                  color: '#000000',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}>
+                  COMPLETED ✓
+                </span>
+              </div>
             </div>
           ))}
         </div>

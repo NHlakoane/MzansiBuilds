@@ -1,57 +1,59 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+import { useContext } from 'react';
+import Navbar from './components/common/Navbar';
+import Footer from './components/common/Footer';
+
+// Pages
+import Home from './pages/Home';
+import Feed from './pages/Feed';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Feed from './pages/Feed';
+import NewProject from './pages/NewProject';
+import EditProject from './pages/EditProject';  // ADD THIS LINE
+import ProjectDetails from './pages/ProjectDetails';
 import CelebrationWall from './pages/CelebrationWall';
+import Profile from './pages/Profile';
 
-function Navbar() {
-  const { user, logout } = useAuth();
-
-  return (
-    <nav style={{ backgroundColor: '#111', padding: '15px', borderBottom: '1px solid #00ff00', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Link to="/" style={{ color: '#00ff00', fontSize: '24px', fontWeight: 'bold', textDecoration: 'none' }}>MzansiBuilds</Link>
-      <div>
-        <Link to="/feed" style={{ color: '#fff', marginRight: '20px', textDecoration: 'none' }}>Feed</Link>
-        {user ? (
-          <>
-            <Link to="/dashboard" style={{ color: '#fff', marginRight: '20px', textDecoration: 'none' }}>Dashboard</Link>
-            <button onClick={logout} style={{ backgroundColor: '#333', color: '#fff', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" style={{ color: '#fff', marginRight: '20px', textDecoration: 'none' }}>Login</Link>
-            <Link to="/register" style={{ color: '#fff', textDecoration: 'none' }}>Register</Link>
-          </>
-        )}
-      </div>
-    </nav>
-  );
-}
+const ProtectedRoute = ({ children }) => {
+  const { user } = useContext(AuthContext);
+  return user ? children : <Navigate to="/login" replace />;
+};
 
 function AppRoutes() {
+  const { user } = useContext(AuthContext);
+
   return (
-    <Routes>
-      <Route path="/" element={<Feed />} />
-      <Route path="/feed" element={<Feed />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/celebration" element={<CelebrationWall />} />
-    </Routes>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#000' }}>
+      <Navbar />
+      <main style={{ flex: 1 }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+          <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+          <Route path="/celebration" element={<CelebrationWall />} />
+          <Route path="/project/:id" element={<ProjectDetails />} />
+          <Route path="/edit-project/:id" element={<ProtectedRoute><EditProject /></ProtectedRoute>} />  {/* ADD THIS LINE */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/new-project" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <Navbar />
         <AppRoutes />
       </AuthProvider>
     </Router>
   );
 }
-
-export default App;
